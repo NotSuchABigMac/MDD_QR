@@ -466,7 +466,7 @@
         </div>
 
         <footer>
-            <p>Built for generating QR codes with labels • Export to PDF • v1.0.2</p>
+            <p>Built for generating QR codes with labels • Export to PDF • v1.0.3</p>
         </footer>
     </div>
 
@@ -511,11 +511,11 @@
                 const qrContainer = document.createElement('div');
                 preview.appendChild(qrContainer);
 
-                // Generate QR code
+                // Generate QR code with higher resolution
                 const qr = new QRCode(qrContainer, {
                     text: code,
-                    width: 200,
-                    height: 200,
+                    width: 600,  // Higher resolution for better quality
+                    height: 600,
                     colorDark: "#000000",
                     colorLight: "#ffffff",
                     correctLevel: QRCode.CorrectLevel.H
@@ -555,33 +555,40 @@
             btn.disabled = true;
 
             try {
-                // Final printed label dimensions: always 900mm wide x 600mm high
-                const pageWidth = 900;
-                const pageHeight = 600;
+                // Output should be 900px wide x 600px high
+                // Convert pixels to mm at 96 DPI (standard screen resolution)
+                // 1 inch = 25.4mm, 96 DPI means 96 pixels per inch
+                const pixelToMM = 25.4 / 96;
                 
-                // QR code should be 65% of page height
-                const qrSize = pageHeight * 0.65; // 390mm
+                const pageWidthPx = 900;
+                const pageHeightPx = 600;
+                const pageWidth = pageWidthPx * pixelToMM;  // ~238mm
+                const pageHeight = pageHeightPx * pixelToMM; // ~159mm
+                
+                // QR code should be 65% of page height in pixels
+                const qrSizePx = pageHeightPx * 0.65; // 390px
+                const qrSize = qrSizePx * pixelToMM;
                 
                 // Font should be 10% of page height
-                // In jsPDF, font size is in points, convert from mm
-                const fontSizeMM = pageHeight * 0.10; // 60mm
-                const fontSize = fontSizeMM * 2.83; // Convert mm to points (1mm ≈ 2.83pt)
+                const fontSizePx = pageHeightPx * 0.10; // 60px
+                const fontSizeMM = fontSizePx * pixelToMM;
+                const fontSize = fontSizeMM * 2.83; // Convert mm to points
                 
                 // Calculate vertical positioning to center the content
                 const labelHeight_text = fontSizeMM;
-                const padding = pageHeight * 0.02; // Small padding between label and QR
+                const padding = pageHeight * 0.02;
                 const totalHeight = labelHeight_text + padding + qrSize;
                 const startY = (pageHeight - totalHeight) / 2;
 
                 const pdf = new jsPDF({
                     orientation: 'landscape',
                     unit: 'mm',
-                    format: [pageHeight, pageWidth] // [height, width] for landscape
+                    format: [pageWidth, pageHeight] // [width, height]
                 });
 
                 for (let i = 0; i < qrData.length; i++) {
                     if (i > 0) {
-                        pdf.addPage();
+                        pdf.addPage([pageWidth, pageHeight], 'landscape');
                     }
 
                     const data = qrData[i];
