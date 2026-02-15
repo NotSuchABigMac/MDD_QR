@@ -466,7 +466,7 @@
         </div>
 
         <footer>
-            <p>Built for generating QR codes with labels • Export to PDF • v1.0.3</p>
+            <p>Built for generating QR codes with labels • Export to PDF • v1.0.5</p>
         </footer>
     </div>
 
@@ -564,17 +564,17 @@
                 const pageWidth = pageWidthPx * pixelToMM;  // ~238mm
                 const pageHeight = pageHeightPx * pixelToMM; // ~159mm
                 
-                // QR code should be 65% of page height in pixels
-                const qrSizePx = pageHeightPx * 0.65; // 390px
+                // QR code should be 55% of page height in pixels
+                const qrSizePx = pageHeightPx * 0.55; // 330px
                 const qrSize = qrSizePx * pixelToMM;
                 
-                // Font should be 10% of page height
-                const fontSizePx = pageHeightPx * 0.10; // 60px
-                const fontSizeMM = fontSizePx * pixelToMM;
-                const fontSize = fontSizeMM * 2.83; // Convert mm to points
+                // Font should be 20% of page height
+                const fontSizePx = pageHeightPx * 0.20; // 120px
+                // Convert directly to points (1px ≈ 0.75pt at 96 DPI)
+                const fontSize = fontSizePx * 0.75; // ~90pt
                 
                 // Calculate vertical positioning to center the content
-                const labelHeight_text = fontSizeMM;
+                const labelHeight_text = fontSizePx * pixelToMM;
                 const padding = pageHeight * 0.02;
                 const totalHeight = labelHeight_text + padding + qrSize;
                 const startY = (pageHeight - totalHeight) / 2;
@@ -585,16 +585,24 @@
                     format: [pageWidth, pageHeight] // [width, height]
                 });
 
+                // Process pages with delays to prevent timeout
                 for (let i = 0; i < qrData.length; i++) {
                     if (i > 0) {
                         pdf.addPage([pageWidth, pageHeight], 'landscape');
+                        
+                        // Add small delay every 10 pages to prevent timeout
+                        if (i % 10 === 0) {
+                            await new Promise(resolve => setTimeout(resolve, 10));
+                            // Update status
+                            showStatus(`Processing ${i}/${qrData.length} pages...`, 'success');
+                        }
                     }
 
                     const data = qrData[i];
 
                     // Add label text
                     pdf.setFontSize(fontSize);
-                    pdf.setFont('helvetica', 'normal');
+                    pdf.setFont('helvetica', 'bold');
                     const textWidth = pdf.getTextWidth(data.code);
                     const textX = (pageWidth - textWidth) / 2;
                     const textY = startY + labelHeight_text;
