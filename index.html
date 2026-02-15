@@ -438,20 +438,6 @@
                 </div>
 
                 <div class="input-group">
-                    <label>Orientation</label>
-                    <div class="radio-group">
-                        <label class="radio-label">
-                            <input type="radio" name="orientation" value="landscape" checked>
-                            <span>Landscape</span>
-                        </label>
-                        <label class="radio-label">
-                            <input type="radio" name="orientation" value="portrait">
-                            <span>Portrait</span>
-                        </label>
-                    </div>
-                </div>
-
-                <div class="input-group">
                     <label>PDF Filename</label>
                     <input type="text" id="filename" value="qr_codes" placeholder="Enter filename">
                 </div>
@@ -480,7 +466,7 @@
         </div>
 
         <footer>
-            <p>Built for generating QR codes with labels • Export to PDF</p>
+            <p>Built for generating QR codes with labels • Export to PDF • v1.0.2</p>
         </footer>
     </div>
 
@@ -569,28 +555,28 @@
             btn.disabled = true;
 
             try {
-                // Page dimensions
-                const pageWidth = orientation === 'landscape' ? 297 : 210;
-                const pageHeight = orientation === 'landscape' ? 210 : 297;
+                // Final printed label dimensions: always 900mm wide x 600mm high
+                const pageWidth = 900;
+                const pageHeight = 600;
                 
                 // QR code should be 65% of page height
-                const qrSize = pageHeight * 0.65;
+                const qrSize = pageHeight * 0.65; // 390mm
                 
                 // Font should be 10% of page height
                 // In jsPDF, font size is in points, convert from mm
-                const fontSizeMM = pageHeight * 0.10;
+                const fontSizeMM = pageHeight * 0.10; // 60mm
                 const fontSize = fontSizeMM * 2.83; // Convert mm to points (1mm ≈ 2.83pt)
                 
                 // Calculate vertical positioning to center the content
-                const labelHeight = fontSizeMM;
+                const labelHeight_text = fontSizeMM;
                 const padding = pageHeight * 0.02; // Small padding between label and QR
-                const totalHeight = labelHeight + padding + qrSize;
+                const totalHeight = labelHeight_text + padding + qrSize;
                 const startY = (pageHeight - totalHeight) / 2;
 
                 const pdf = new jsPDF({
-                    orientation: orientation === 'landscape' ? 'l' : 'p',
+                    orientation: 'landscape',
                     unit: 'mm',
-                    format: 'a4'
+                    format: [pageHeight, pageWidth] // [height, width] for landscape
                 });
 
                 for (let i = 0; i < qrData.length; i++) {
@@ -605,7 +591,7 @@
                     pdf.setFont('helvetica', 'normal');
                     const textWidth = pdf.getTextWidth(data.code);
                     const textX = (pageWidth - textWidth) / 2;
-                    const textY = startY + labelHeight;
+                    const textY = startY + labelHeight_text;
                     
                     pdf.text(data.code, textX, textY);
 
