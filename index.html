@@ -466,7 +466,7 @@
         </div>
 
         <footer>
-            <p>Built for generating QR codes with labels • Export to PDF • v1.0.5</p>
+            <p>Built for generating QR codes with labels • Export to PDF • v1.0.4</p>
         </footer>
     </div>
 
@@ -564,17 +564,17 @@
                 const pageWidth = pageWidthPx * pixelToMM;  // ~238mm
                 const pageHeight = pageHeightPx * pixelToMM; // ~159mm
                 
-                // QR code should be 55% of page height in pixels
-                const qrSizePx = pageHeightPx * 0.55; // 330px
+                // QR code should be 60% of page height in pixels
+                const qrSizePx = pageHeightPx * 0.60; // 360px
                 const qrSize = qrSizePx * pixelToMM;
                 
                 // Font should be 20% of page height
                 const fontSizePx = pageHeightPx * 0.20; // 120px
-                // Convert directly to points (1px ≈ 0.75pt at 96 DPI)
-                const fontSize = fontSizePx * 0.75; // ~90pt
+                const fontSizeMM = fontSizePx * pixelToMM;
+                const fontSize = fontSizeMM * 2.83; // Convert mm to points
                 
                 // Calculate vertical positioning to center the content
-                const labelHeight_text = fontSizePx * pixelToMM;
+                const labelHeight_text = fontSizeMM;
                 const padding = pageHeight * 0.02;
                 const totalHeight = labelHeight_text + padding + qrSize;
                 const startY = (pageHeight - totalHeight) / 2;
@@ -602,7 +602,7 @@
 
                     // Add label text
                     pdf.setFontSize(fontSize);
-                    pdf.setFont('helvetica', 'bold');
+                    pdf.setFont('helvetica', 'normal');
                     const textWidth = pdf.getTextWidth(data.code);
                     const textX = (pageWidth - textWidth) / 2;
                     const textY = startY + labelHeight_text;
