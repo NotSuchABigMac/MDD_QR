@@ -569,21 +569,23 @@
             btn.disabled = true;
 
             try {
-                // Match original Python dimensions exactly
+                // Page dimensions
                 const pageWidth = orientation === 'landscape' ? 297 : 210;
                 const pageHeight = orientation === 'landscape' ? 210 : 297;
                 
-                // QR code size - larger to match original
-                const qrSize = 95;
+                // QR code should be 65% of page height
+                const qrSize = pageHeight * 0.65;
                 
-                // Font size for label
-                const fontSize = 28;
+                // Font should be 10% of page height
+                // In jsPDF, font size is in points, convert from mm
+                const fontSizeMM = pageHeight * 0.10;
+                const fontSize = fontSizeMM * 2.83; // Convert mm to points (1mm ≈ 2.83pt)
                 
-                // Position from top (much higher than center)
-                const topMargin = 35;
-                const labelY = topMargin;
-                const padding = 5; // Space between label and QR
-                const qrY = labelY + padding;
+                // Calculate vertical positioning to center the content
+                const labelHeight = fontSizeMM;
+                const padding = pageHeight * 0.02; // Small padding between label and QR
+                const totalHeight = labelHeight + padding + qrSize;
+                const startY = (pageHeight - totalHeight) / 2;
 
                 const pdf = new jsPDF({
                     orientation: orientation === 'landscape' ? 'l' : 'p',
@@ -598,16 +600,18 @@
 
                     const data = qrData[i];
 
-                    // Add label text at top
+                    // Add label text
                     pdf.setFontSize(fontSize);
                     pdf.setFont('helvetica', 'normal');
                     const textWidth = pdf.getTextWidth(data.code);
                     const textX = (pageWidth - textWidth) / 2;
+                    const textY = startY + labelHeight;
                     
-                    pdf.text(data.code, textX, labelY);
+                    pdf.text(data.code, textX, textY);
 
                     // Add QR code below label
                     const qrX = (pageWidth - qrSize) / 2;
+                    const qrY = textY + padding;
                     pdf.addImage(data.dataUrl, 'PNG', qrX, qrY, qrSize, qrSize);
                 }
 
