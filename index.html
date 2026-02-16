@@ -466,7 +466,7 @@
         </div>
 
         <footer>
-            <p>Built for generating QR codes with labels • Export to PDF • v1.0.4</p>
+            <p>Built for generating QR codes with labels • Export to PDF • v1.1.0</p>
         </footer>
     </div>
 
@@ -511,14 +511,15 @@
                 const qrContainer = document.createElement('div');
                 preview.appendChild(qrContainer);
 
-                // Generate QR code with higher resolution
+                // Generate QR code with specific settings
+                // Version 1 (21x21), Error Correction Level L (Low/7%), 4-module quiet zone
                 const qr = new QRCode(qrContainer, {
                     text: code,
                     width: 600,  // Higher resolution for better quality
                     height: 600,
                     colorDark: "#000000",
                     colorLight: "#ffffff",
-                    correctLevel: QRCode.CorrectLevel.H
+                    correctLevel: QRCode.CorrectLevel.L  // Low error correction (7% recovery)
                 });
 
                 previewArea.appendChild(preview);
@@ -554,35 +555,35 @@
             btn.disabled = true;
 
             try {
-                // Output should be 900px wide x 600px high
-                // Convert pixels to mm at 96 DPI (standard screen resolution)
-                // 1 inch = 25.4mm, 96 DPI means 96 pixels per inch
-                const pixelToMM = 25.4 / 96;
-                
+                // Exact specifications in pixels for 900x600 output
                 const pageWidthPx = 900;
                 const pageHeightPx = 600;
-                const pageWidth = pageWidthPx * pixelToMM;  // ~238mm
-                const pageHeight = pageHeightPx * pixelToMM; // ~159mm
                 
-                // QR code should be 60% of page height in pixels
-                const qrSizePx = pageHeightPx * 0.60; // 360px
+                // Layout specifications (in pixels)
+                const topMarginPx = 70;
+                const textHeightPx = 60;  // Increased from 45px
+                const gapPx = 30;         // Decreased from 45px
+                const qrSizePx = 365;
+                const bottomMarginPx = 75;
+                // Total: 70 + 60 + 30 + 365 + 75 = 600px ✓
+                
+                // Convert pixels to mm at 96 DPI
+                const pixelToMM = 25.4 / 96;
+                const pageWidth = pageWidthPx * pixelToMM;
+                const pageHeight = pageHeightPx * pixelToMM;
+                const topMargin = topMarginPx * pixelToMM;
+                const textHeight = textHeightPx * pixelToMM;
+                const gap = gapPx * pixelToMM;
                 const qrSize = qrSizePx * pixelToMM;
                 
-                // Font should be 20% of page height
-                const fontSizePx = pageHeightPx * 0.20; // 120px
-                const fontSizeMM = fontSizePx * pixelToMM;
-                const fontSize = fontSizeMM * 2.83; // Convert mm to points
-                
-                // Calculate vertical positioning to center the content
-                const labelHeight_text = fontSizeMM;
-                const padding = pageHeight * 0.02;
-                const totalHeight = labelHeight_text + padding + qrSize;
-                const startY = (pageHeight - totalHeight) / 2;
+                // Font size: convert 60px height to point size
+                // To get 60px text height, we need larger font size
+                const fontSize = textHeightPx * 1.0; // 60px → 60pt
 
                 const pdf = new jsPDF({
                     orientation: 'landscape',
                     unit: 'mm',
-                    format: [pageWidth, pageHeight] // [width, height]
+                    format: [pageWidth, pageHeight]
                 });
 
                 // Process pages with delays to prevent timeout
@@ -593,25 +594,26 @@
                         // Add small delay every 10 pages to prevent timeout
                         if (i % 10 === 0) {
                             await new Promise(resolve => setTimeout(resolve, 10));
-                            // Update status
                             showStatus(`Processing ${i}/${qrData.length} pages...`, 'success');
                         }
                     }
 
                     const data = qrData[i];
 
+                    // Position calculations
+                    const textY = topMargin + (textHeight * 0.75); // Baseline position for text
+                    const qrY = topMargin + textHeight + gap;
+
                     // Add label text
                     pdf.setFontSize(fontSize);
                     pdf.setFont('helvetica', 'normal');
                     const textWidth = pdf.getTextWidth(data.code);
                     const textX = (pageWidth - textWidth) / 2;
-                    const textY = startY + labelHeight_text;
                     
                     pdf.text(data.code, textX, textY);
 
-                    // Add QR code below label
+                    // Add QR code
                     const qrX = (pageWidth - qrSize) / 2;
-                    const qrY = textY + padding;
                     pdf.addImage(data.dataUrl, 'PNG', qrX, qrY, qrSize, qrSize);
                 }
 
