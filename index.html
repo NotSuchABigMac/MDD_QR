@@ -470,7 +470,7 @@
         </div>
 
         <footer>
-            <p>Built for generating QR codes with labels • Export to PDF • v1.1.1</p>
+            <p>Built for generating QR codes with labels • Export to PDF • v1.2.1</p>
         </footer>
     </div>
 
@@ -565,8 +565,8 @@
                 
                 // Layout specifications (in pixels)
                 const topMarginPx = 70;
-                const textHeightPx = 60;  // Increased from 45px
-                const gapPx = 30;         // Decreased from 45px
+                const textHeightPx = 60;
+                const gapPx = 30;
                 const qrSizePx = 365;
                 const bottomMarginPx = 75;
                 // Total: 70 + 60 + 30 + 365 + 75 = 600px ✓
@@ -581,31 +581,34 @@
                 const qrSize = qrSizePx * pixelToMM;
                 
                 // Font size: convert 60px height to point size
-                // To get 60px text height, we need larger font size
                 const fontSize = textHeightPx * 1.0; // 60px → 60pt
 
+                // Create PDF with compression enabled to reduce memory usage
                 const pdf = new jsPDF({
                     orientation: 'landscape',
                     unit: 'mm',
-                    format: [pageWidth, pageHeight]
+                    format: [pageWidth, pageHeight],
+                    compress: true  // Enable PDF compression
                 });
 
-                // Process pages with delays to prevent timeout
-                for (let i = 0; i < qrData.length; i++) {
+                const totalPages = qrData.length;
+
+                // Process pages with optimizations
+                for (let i = 0; i < totalPages; i++) {
                     if (i > 0) {
                         pdf.addPage([pageWidth, pageHeight], 'landscape');
-                        
-                        // Add small delay every 10 pages to prevent timeout
-                        if (i % 10 === 0) {
-                            await new Promise(resolve => setTimeout(resolve, 10));
-                            showStatus(`Processing ${i}/${qrData.length} pages...`, 'success');
-                        }
+                    }
+                    
+                    // More frequent updates and longer delays for large batches
+                    if (i % 5 === 0) {
+                        await new Promise(resolve => setTimeout(resolve, 50));
+                        showStatus(`Processing page ${i + 1}/${totalPages}...`, 'success');
                     }
 
                     const data = qrData[i];
 
                     // Position calculations
-                    const textY = topMargin + (textHeight * 0.75); // Baseline position for text
+                    const textY = topMargin + (textHeight * 0.75);
                     const qrY = topMargin + textHeight + gap;
 
                     // Add label text
@@ -616,16 +619,19 @@
                     
                     pdf.text(data.code, textX, textY);
 
-                    // Add QR code
+                    // Add QR code with compression
                     const qrX = (pageWidth - qrSize) / 2;
-                    pdf.addImage(data.dataUrl, 'PNG', qrX, qrY, qrSize, qrSize);
+                    pdf.addImage(data.dataUrl, 'PNG', qrX, qrY, qrSize, qrSize, undefined, 'FAST');
                 }
 
+                showStatus('Finalizing PDF...', 'success');
+                await new Promise(resolve => setTimeout(resolve, 100));
+
                 pdf.save(`${filename}.pdf`);
-                showStatus('PDF downloaded successfully!', 'success');
+                showStatus(`PDF with ${totalPages} pages downloaded successfully!`, 'success');
             } catch (error) {
                 console.error('PDF generation error:', error);
-                showStatus('Failed to generate PDF', 'error');
+                showStatus('Failed to generate PDF: ' + error.message, 'error');
             } finally {
                 btn.innerHTML = originalText;
                 btn.disabled = false;
